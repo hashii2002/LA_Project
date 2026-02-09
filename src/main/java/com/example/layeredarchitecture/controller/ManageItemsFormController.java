@@ -1,6 +1,9 @@
 package com.example.layeredarchitecture.controller;
 
-import com.example.layeredarchitecture.dao.ItemDAOImpl;
+import com.example.layeredarchitecture.bo.custom.ItemBO;
+import com.example.layeredarchitecture.bo.custom.impl.ItemBOImpl;
+import com.example.layeredarchitecture.dao.custom.ItemDAO;
+import com.example.layeredarchitecture.dao.custom.impl.ItemDAOImpl;
 import com.example.layeredarchitecture.model.ItemDTO;
 import com.example.layeredarchitecture.view.tdm.ItemTM;
 import com.jfoenix.controls.JFXButton;
@@ -36,6 +39,8 @@ public class ManageItemsFormController {
     public TextField txtUnitPrice;
     public JFXButton btnAddNewItem;
 
+    ItemBO itemBO=new ItemBOImpl();
+
     public void initialize() {
         tblItems.getColumns().get(0).setCellValueFactory(new PropertyValueFactory<>("code"));
         tblItems.getColumns().get(1).setCellValueFactory(new PropertyValueFactory<>("description"));
@@ -70,20 +75,19 @@ public class ManageItemsFormController {
         tblItems.getItems().clear();
         try {
             /*Get all items*/
-            ItemDAOImpl itemDAO = new ItemDAOImpl();
-            ArrayList<ItemDTO> itemDTO=itemDAO.getAllItems();
 
-            for(ItemDTO item : itemDTO) {
+            ArrayList<ItemDTO> items = itemBO.getAllItem();
+            for (ItemDTO itemDTO : items) {
                 tblItems.getItems().add(
                         new ItemTM(
-                                item.getCode(),
-                                item.getDescription(),
-                                item.getUnitPrice(),
-                                item.getQtyOnHand()
+                                itemDTO.getCode(),
+                                itemDTO.getDescription(),
+                                itemDTO.getUnitPrice(),
+                                itemDTO.getQtyOnHand()
+
                         )
                 );
             }
-
 
         } catch (SQLException e) {
             new Alert(Alert.AlertType.ERROR, e.getMessage()).show();
@@ -140,9 +144,9 @@ public class ManageItemsFormController {
             if (!existItem(code)) {
                 new Alert(Alert.AlertType.ERROR, "There is no such item associated with the id " + code).show();
             }
-            ItemDAOImpl itemDAO = new ItemDAOImpl();
-            itemDAO.deleteItem(code);
 
+
+            itemBO.deleteItem(code);
             tblItems.getItems().remove(tblItems.getSelectionModel().getSelectedItem());
             tblItems.getSelectionModel().clearSelection();
             initUI();
@@ -181,8 +185,9 @@ public class ManageItemsFormController {
                     new Alert(Alert.AlertType.ERROR, code + " already exists").show();
                 }
                 //Save Item
-                ItemDAOImpl  itemDAO = new ItemDAOImpl();
-                itemDAO.saveItem(code, description, unitPrice, qtyOnHand);
+
+                itemBO.saveItem(new ItemDTO(code, description, unitPrice, qtyOnHand));
+
                 tblItems.getItems().add(new ItemTM(code, description, unitPrice, qtyOnHand));
 
             } catch (SQLException e) {
@@ -197,9 +202,10 @@ public class ManageItemsFormController {
                     new Alert(Alert.AlertType.ERROR, "There is no such item associated with the id " + code).show();
                 }
                 /*Update Item*/
-                ItemDAOImpl itemDAO = new ItemDAOImpl();
-                itemDAO.updateItem(description,unitPrice,qtyOnHand,code);
 
+
+                itemBO.updateItem(new ItemDTO(code,description,unitPrice,qtyOnHand));
+//
                 ItemTM selectedItem = tblItems.getSelectionModel().getSelectedItem();
                 selectedItem.setDescription(description);
                 selectedItem.setQtyOnHand(qtyOnHand);
@@ -217,17 +223,15 @@ public class ManageItemsFormController {
 
 
     private boolean existItem(String code) throws SQLException, ClassNotFoundException {
-        ItemDAOImpl itemDAOImpl = new ItemDAOImpl();
-        return  itemDAOImpl.existItem(code);
+
+        return  itemBO.exitsItem(code);
     }
 
 
     private String generateNewId() {
         try {
-            ItemDAOImpl itemDAO = new ItemDAOImpl();
-            return itemDAO.generateNewItem();
 
-
+            return itemBO.generateNewID();
         } catch (SQLException e) {
             new Alert(Alert.AlertType.ERROR, e.getMessage()).show();
         } catch (ClassNotFoundException e) {
